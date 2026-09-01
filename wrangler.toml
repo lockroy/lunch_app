@@ -1,0 +1,15 @@
+name = "lunch-app"
+main = "worker/index.js"
+compatibility_date = "2025-05-01"
+compatibility_flags = ["nodejs_compat"]
+# 版本：v3.2.1 · 2026-08-29（KV 版 + D10 运气值 + 记录按运气值降序 + 清空按钮修复 + KV id 已预填）
+
+# 前端静态资源（轮盘页面）
+assets = { directory = "./public", binding = "ASSETS" }
+
+# KV 存储（共享菜单 + 今日记录；免建库、免建表、免迁移）
+# id 已预填真实 namespace（lunch_kv）——解压后可直接 wrangler deploy，无需再替换
+# 如需换绑别的 namespace，用 `wrangler kv namespace list` 查 id 后替换下方值
+[[kv_namespaces]]
+binding = "KV"
+id = "980b3ca603e94e11aeda92a440b07ec0"

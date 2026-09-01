@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🍱 中午食什么大抽奖</title>
+<style>
+  :root{
+    --bg:#fff7ed; --card:#ffffff; --ink:#1f2937; --muted:#6b7280;
+    --accent:#f97316; --accent2:#fb923c; --line:#fde4c8; --ok:#16a34a; --bad:#ef4444;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{margin:0;font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    background:radial-gradient(1200px 600px at 50% -10%,#fff3e0,var(--bg));
+    color:var(--ink);min-height:100vh;padding:18px 14px 40px;}
+  .wrap{max-width:560px;margin:0 auto;}
+  header{text-align:center;margin-bottom:10px;}
+  header h1{margin:0;font-size:24px;color:var(--accent);letter-spacing:1px;}
+  header p{margin:4px 0 0;color:var(--muted);font-size:13px;}
+  .name-picker{margin:12px 0 4px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;}
+  .np-title{font-size:13px;color:var(--muted);margin-bottom:8px;font-weight:600;}
+  .np-list{display:flex;flex-wrap:wrap;gap:8px;}
+  .np-btn{padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:14px;cursor:pointer;color:var(--ink);transition:.12s;}
+  .np-btn.on{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:700;}
+  .np-btn.done{background:#f0fdf4;border-color:#bbf7d0;color:#16a34a;cursor:not-allowed;opacity:.75;}
+  .np-btn.done.on{background:#86efac;border-color:#86efac;color:#14532d;}
+  .np-other-in{margin-top:8px;display:none;}
+  .np-other-in.show{display:block;}
+  .np-other-in input{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:14px;width:100%;}
+  .np-status{font-size:13px;margin-top:8px;min-height:18px;}
+  .np-status.ok{color:var(--ok);}
+  .np-status.bad{color:var(--bad);}
+  .filters{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:12px 0;}
+  .chip{padding:7px 14px;border-radius:999px;border:1px solid var(--line);background:#fff;
+    font-size:13px;cursor:pointer;user-select:none;transition:.15s;color:var(--muted);}
+  .chip.on{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600;}
+  .wheel-box{position:relative;width:min(92vw,420px);aspect-ratio:1/1;margin:6px auto 4px;}
+  canvas{width:100%;height:100%;display:block;filter:drop-shadow(0 10px 24px rgba(249,115,22,.25));}
+  .pointer{position:absolute;top:-6px;left:50%;transform:translateX(-50%);
+    width:0;height:0;border-left:16px solid transparent;border-right:16px solid transparent;
+    border-top:26px solid var(--accent);filter:drop-shadow(0 2px 2px rgba(0,0,0,.2));z-index:3;}
+  .pointer::after{content:"";position:absolute;top:-30px;left:-9px;width:18px;height:18px;border-radius:50%;
+    background:var(--accent);box-shadow:0 0 0 4px #fff inset;}
+  .spin-btn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    width:96px;height:96px;border-radius:50%;border:none;cursor:pointer;
+    background:radial-gradient(circle at 35% 30%,#ffb066,var(--accent));
+    color:#fff;font-size:17px;font-weight:700;box-shadow:0 6px 16px rgba(249,115,22,.5),0 0 0 6px #fff;
+    z-index:2;transition:.1s;}
+  .spin-btn:active{transform:translate(-50%,-50%) scale(.94);}
+  .spin-btn:disabled{opacity:.6;cursor:default;}
+  .toolbar{display:flex;gap:8px;justify-content:center;margin:10px 0 4px;flex-wrap:wrap;}
+  .btn{padding:9px 16px;border-radius:10px;border:1px solid var(--line);background:#fff;
+    font-size:13px;cursor:pointer;color:var(--ink);}
+  .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600;}
+  .mask{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:10;padding:20px;}
+  .mask.show{display:flex;animation:fade .2s ease;}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .result{background:#fff;border-radius:20px;padding:26px 22px;max-width:340px;width:100%;text-align:center;
+    box-shadow:0 20px 60px rgba(0,0,0,.3);animation:pop .25s ease;}
+  @keyframes pop{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+  .result .big{font-size:60px;line-height:1;margin:6px 0 4px;}
+  .result .ttl{color:var(--muted);font-size:14px;}
+  .result .name{font-size:26px;font-weight:800;margin:6px 0;color:var(--accent);}
+  .result .tags{font-size:12px;color:var(--muted);margin-bottom:14px;}
+  .result .acts{display:flex;gap:10px;}
+  .result .acts .btn{flex:1;padding:12px 0;font-size:15px;}
+  /* D10 运气骰子 */
+  .luck-sec{margin:4px 0 14px;padding-top:12px;border-top:1px dashed var(--line);}
+  .luck-ttl{font-size:12px;color:var(--muted);margin-bottom:10px;font-weight:600;letter-spacing:1px;}
+  .d10{width:86px;height:86px;margin:0 auto;display:flex;align-items:center;justify-content:center;
+    clip-path:polygon(50% 0%,79.4% 9.6%,97.6% 34.6%,97.6% 65.4%,79.4% 90.4%,50% 100%,20.6% 90.4%,2.5% 65.4%,2.5% 34.6%,20.6% 9.6%);
+    background:linear-gradient(145deg,#fbbf24,#f97316);
+    animation:d10wobble .45s ease-in-out infinite;}
+  .d10 span{font-size:40px;font-weight:900;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.3);}
+  .d10.final{animation:d10pop .45s ease forwards;}
+  .d10.final.v1{background:linear-gradient(145deg,#fca5a5,#ef4444);}
+  .d10.final.v2{background:linear-gradient(145deg,#fdba74,#f97316);}
+  .d10.final.v3{background:linear-gradient(145deg,#fde047,#f59e0b);}
+  @keyframes d10wobble{0%{transform:rotate(-5deg)}50%{transform:rotate(5deg) scale(1.05)}100%{transform:rotate(-5deg)}}
+  @keyframes d10pop{0%{transform:scale(.75)}55%{transform:scale(1.18)}100%{transform:scale(1)}}
+  .luck-verdict{margin-top:10px;font-size:15px;font-weight:700;min-height:22px;color:var(--muted);}
+  .luck-verdict.v1{color:#b91c1c;}
+  .luck-verdict.v2{color:#b45309;}
+  .luck-verdict.v3{color:#dc2626;text-shadow:0 0 12px rgba(248,113,113,.4);}
+  .rc-luck{font-size:11px;font-weight:700;border-radius:8px;padding:2px 6px;white-space:nowrap;flex-shrink:0;}
+  .rc-luck.lv1{background:#fee2e2;color:#b91c1c;}
+  .rc-luck.lv2{background:#fef3c7;color:#b45309;}
+  .rc-luck.lv3{background:#fde68a;color:#92400e;box-shadow:0 0 6px rgba(245,158,11,.45);}
+  .rc-luck.lv0{color:var(--muted);font-weight:400;}
+  .records{margin:16px 0 4px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;}
+  .rc-title{font-size:14px;font-weight:700;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+  .rc-title small{font-weight:400;color:var(--muted);font-size:12px;}
+  .rc-title .clr{font-size:12px;color:var(--muted);cursor:pointer;border:1px solid var(--line);border-radius:8px;padding:3px 8px;}
+  .rc-list{display:flex;flex-direction:column;gap:6px;}
+  .rc-row{display:flex;align-items:center;gap:8px;font-size:14px;padding:7px 10px;background:#fff7ed;border-radius:10px;}
+  .rc-luck{font-size:14px;font-weight:800;border-radius:8px;padding:3px 8px;white-space:nowrap;flex-shrink:0;min-width:44px;text-align:center;}
+  .rc-name{font-weight:600;min-width:50px;color:var(--ink);}
+  .rc-arrow{color:var(--muted);}
+  .rc-rest{color:var(--accent);font-weight:600;flex:1;}
+  .rc-time{color:var(--muted);font-size:12px;}
+  .rc-empty{color:var(--muted);font-size:13px;text-align:center;padding:10px 0;}
+  .mgr{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:20;align-items:flex-end;justify-content:center;}
+  .mgr.show{display:flex;}
+  .sheet{background:#fff;width:100%;max-width:560px;max-height:86vh;overflow:auto;border-radius:18px 18px 0 0;padding:16px 16px 24px;}
+  .sheet h3{margin:2px 0 12px;font-size:17px;display:flex;justify-content:space-between;align-items:center;}
+  .sheet h3 .x{cursor:pointer;color:var(--muted);font-size:22px;line-height:1;}
+  .add{display:grid;grid-template-columns:54px 1fr 64px 40px;gap:6px;margin-bottom:12px;align-items:center;}
+  .add input{border:1px solid var(--line);border-radius:8px;padding:8px;font-size:13px;width:100%;}
+  .add .emoji-in{text-align:center;font-size:18px;}
+  .item{display:flex;align-items:center;gap:8px;padding:8px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;}
+  .item .e{font-size:22px;width:30px;text-align:center;}
+  .item .nm{flex:1;font-size:14px;}
+  .item .nm small{color:var(--muted);display:block;font-size:11px;}
+  .item .wt{display:flex;align-items:center;gap:4px;}
+  .item .wt button{width:24px;height:24px;border-radius:6px;border:1px solid var(--line);background:#fff;cursor:pointer;font-size:14px;line-height:1;}
+  .item .wt span{width:20px;text-align:center;font-size:13px;}
+  .item .del{border:none;background:#fee2e2;color:var(--bad);border-radius:8px;padding:6px 9px;cursor:pointer;font-size:12px;}
+  .item.off{opacity:.5;}
+  .empty{text-align:center;color:var(--muted);padding:30px 0;font-size:14px;}
+  .hint{font-size:12px;color:var(--muted);text-align:center;margin-top:6px;}
+  .loading{text-align:center;color:var(--muted);padding:40px 0;font-size:14px;}
+  .ver{font-size:11px;color:var(--muted);text-align:center;margin-top:18px;padding-top:12px;border-top:1px dashed var(--line);letter-spacing:.5px;}
+  .ver b{font-weight:600;color:#6b7280;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🍱 中午食什么大抽奖</h1>
+    <p>不用想，转一下就知道今天吃啥</p>
+  </header>
+
+  <div class="name-picker" id="namePicker">
+    <div class="np-title">① 先选你的名字（今天每人限抽一次）</div>
+    <div class="np-list" id="npList"></div>
+    <div class="np-other-in" id="npOtherIn"><input id="npOtherInput" placeholder="输入你的名字后回车" maxlength="20"></div>
+    <div class="np-status" id="npStatus"></div>
+  </div>
+
+  <div class="filters" id="filters">
+    <span class="chip" data-f="noSpicy">🌶️ 今天不吃辣</span>
+    <span class="chip" data-f="onlyLight">🥗 只要轻食</span>
+    <span class="chip" data-f="avoidRepeat">🔁 避免连抽同一家</span>
+  </div>
+
+  <div class="wheel-box">
+    <div class="pointer"></div>
+    <canvas id="wheel" width="440" height="440"></canvas>
+    <button class="spin-btn" id="spinBtn">开始<br>抽奖</button>
+  </div>
+
+  <div class="toolbar">
+    <button class="btn primary" id="spinBtn2">🎯 抽一次</button>
+    <button class="btn" id="mgrBtn">📝 管理菜单</button>
+  </div>
+  <div class="hint" id="hint"></div>
+
+  <div class="records">
+    <div class="rc-title">📋 今日抽奖记录 <small id="rcDate"></small><span class="clr" id="rcClear">清空</span></div>
+    <div class="rc-list" id="rcList"></div>
+  </div>
+
+  <footer class="ver" id="verTag">前端 v3.1.0 · 2026-08-29</footer>
+</div>
+
+<!-- 结果弹窗 -->
+<div class="mask" id="resultMask">
+  <div class="result">
+    <div class="ttl">今天吃</div>
+    <div class="big" id="rEmoji">🍜</div>
+    <div class="name" id="rName">牛肉面</div>
+    <div class="tags" id="rTags"></div>
+    <div class="luck-sec">
+      <div class="luck-ttl">🎲 今日運氣 · D10</div>
+      <div class="d10" id="d10"><span id="d10Num">?</span></div>
+      <div class="luck-verdict" id="luckVerdict">骰子滚动中…</div>
+    </div>
+    <div class="acts">
+      <button class="btn primary" id="rOk">就这个 ✅</button>
+      <button class="btn" id="rAgain">再抽一次 🔄</button>
+    </div>
+  </div>
+</div>
+
+<!-- 菜单管理 -->
+<div class="mgr" id="mgr">
+  <div class="sheet">
+    <h3>📝 管理菜单 <span class="x" id="mgrClose">×</span></h3>
+    <div class="add">
+      <input class="emoji-in" id="aEmoji" value="🍽️" maxlength="2">
+      <input id="aName" placeholder="餐品名，如 咖喱饭">
+      <input id="aTags" placeholder="标签:辣,饭类" style="grid-column:3 / span 2;">
+      <input id="aWeight" type="number" min="1" value="1" title="权重">
+      <button class="btn primary" id="aAdd" style="grid-column:4;">＋</button>
+    </div>
+    <div id="itemList"></div>
+    <div class="hint">菜单保存在云端（KV），团队共享同一份。改完点「完成」会自动同步。</div>
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <button class="btn" id="resetMenu" style="flex:1;">恢复默认菜单</button>
+      <button class="btn primary" id="mgrDone" style="flex:1;">完成</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const PALETTE = ["#f97316","#fb923c","#facc15","#22c55e","#14b8a6","#0ea5e9","#6366f1","#a855f7","#ec4899","#ef4444","#84cc16","#06b6d4","#e11d48","#f59e0b","#10b981","#8b5cf6"];
+const NAMES = ["ted","wil","roy","raymond","sakam","joyce","max","yuliana","victor","other"];
+const DEFAULT_MENU = [
+  {emoji:"🍲",name:"遠M",tags:[]},{emoji:"🍜",name:"近M",tags:[]},{emoji:"🍚",name:"孖寶",tags:[]},
+  {emoji:"🍛",name:"新康記",tags:[]},{emoji:"🥟",name:"北方餃子",tags:["餃子","麵食"]},{emoji:"🍱",name:"一號",tags:[]},
+  {emoji:"🍳",name:"新潮",tags:[]},{emoji:"🍣",name:"味藏",tags:[]},{emoji:"🍢",name:"𧙗街",tags:[]},
+  {emoji:"🍗",name:"俊榮",tags:[]},{emoji:"🍜",name:"新鴻發 (連勝)",tags:[]}
+];
+
+let items = [], records = [], settings = { noSpicy:false, onlyLight:false, avoidRepeat:false };
+let rotation = 0, spinning = false, lastWinner = null;
+let currentName = null, customOther = null;
+
+function todayKey(){const d=new Date();const m=String(d.getMonth()+1).padStart(2,"0");const day=String(d.getDate()).padStart(2,"0");return d.getFullYear()+"-"+m+"-"+day;}
+function nowTime(){const d=new Date();return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function flash(msg){const h=document.getElementById("hint");h.textContent=msg;setTimeout(()=>h.textContent="",2600);}
+
+// ---------- 后端数据层（KV via REST） ----------
+async function loadItems(){
+  const r = await fetch("/api/menu"); items = await r.json();
+  items.forEach((x,i)=>x.color=PALETTE[i%PALETTE.length]);
+  if(!items.some(it=>it.off)) items.forEach(it=>it.off=false);
+}
+async function saveItems(){
+  await fetch("/api/menu",{method:"PUT",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(items.map(({emoji,name,tags,weight})=>({emoji,name,tags,weight})))});
+  renderList();drawWheel();
+}
+async function loadRecords(){
+  const r = await fetch("/api/records"); records = await r.json();
+}
+function drawOf(name){return records.find(d=>d.name===name);}
+
+// ---------- 转盘绘制 ----------
+const canvas=document.getElementById("wheel"), ctx=canvas.getContext("2d");
+const SIZE=440, CX=SIZE/2, CY=SIZE/2, R=SIZE/2-8;
+function activeList(){
+  return items.filter(it=>{
+    if(it.off) return false;
+    if(settings.noSpicy && (it.tags||[]).includes("辣")) return false;
+    if(settings.onlyLight && !(it.tags||[]).some(t=>["轻食","健康","沙拉"].includes(t))) return false;
+    if(settings.avoidRepeat && lastWinner && it.id===lastWinner) return false;
+    return true;
+  });
+}
+function drawWheel(){
+  const list=activeList();
+  ctx.clearRect(0,0,SIZE,SIZE);
+  if(list.length===0){ctx.fillStyle="#eee";ctx.beginPath();ctx.arc(CX,CY,R,0,2*Math.PI);ctx.fill();
+    ctx.fillStyle="#999";ctx.font="16px sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";
+    ctx.fillText("菜单为空或全被排除",CX,CY);return;}
+  const seg=2*Math.PI/list.length;
+  list.forEach((it,i)=>{
+    const start=-Math.PI/2 + i*seg + rotation;
+    ctx.beginPath();ctx.moveTo(CX,CY);ctx.arc(CX,CY,R,start,start+seg);ctx.closePath();
+    ctx.fillStyle=it.color||PALETTE[i%PALETTE.length];ctx.fill();
+    ctx.strokeStyle="rgba(255,255,255,.6)";ctx.lineWidth=2;ctx.stroke();
+    ctx.save();ctx.translate(CX,CY);ctx.rotate(start+seg/2);
+    ctx.fillStyle="#fff";ctx.font="bold 15px 'PingFang SC',sans-serif";ctx.textAlign="right";ctx.textBaseline="middle";
+    ctx.fillText(it.emoji+" "+it.name, R-14, 0);ctx.restore();
+  });
+  ctx.beginPath();ctx.arc(CX,CY,46,0,2*Math.PI);ctx.fillStyle="#fff";ctx.fill();
+}
+function weightedPick(list){
+  const total=list.reduce((s,it)=>s+it.weight,0);let r=Math.random()*total;
+  for(const it of list){r-=it.weight;if(r<=0)return it;}return list[list.length-1];
+}
+
+// ---------- 抽奖 ----------
+function spin(){
+  if(spinning) return;
+  if(!currentName){flash("请先选择你的名字 👆");return;}
+  if(drawOf(currentName)){flash(currentName+" 今天已抽过啦（"+drawOf(currentName).restaurant+"），明天再来");return;}
+  const list=activeList();
+  if(list.length===0){flash("先把菜单加回来，或取消「今天不吃」的筛选");return;}
+  spinning=true;document.getElementById("spinBtn").disabled=true;document.getElementById("spinBtn2").disabled=true;
+  const winner=weightedPick(list);const k=list.indexOf(winner);
+  const luck=1+Math.floor(Math.random()*10);   // D10 今日运气值（与餐厅一起抽出）
+  const seg=2*Math.PI/list.length;const center=(k+0.5)*seg;
+  const cur=((rotation%(2*Math.PI))+2*Math.PI)%(2*Math.PI);
+  let delta=(-center-cur)%(2*Math.PI);if(delta<0)delta+=2*Math.PI;
+  const spins=5+Math.floor(Math.random()*3);
+  const target=rotation+spins*2*Math.PI+delta;
+  const start=rotation,dist=target-start,dur=3200,t0=performance.now();
+  ding("tick");
+  function frame(now){
+    const p=Math.min(1,(now-t0)/dur);const e=1-Math.pow(1-p,3);
+    rotation=start+dist*e;drawWheel();
+    if(p<1)requestAnimationFrame(frame);
+    else{rotation=target;spinning=false;
+      document.getElementById("spinBtn").disabled=false;document.getElementById("spinBtn2").disabled=false;
+      lastWinner=winner.id;finalizeDraw(winner,luck);}
+  }
+  requestAnimationFrame(frame);
+}
+async function finalizeDraw(winner,luck){
+  try{
+    const res=await fetch("/api/draw",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({name:currentName,restaurant:winner.name,luck})});
+    if(res.status===409){const e=await res.json();flash(currentName+" 今天已抽过啦（"+e.restaurant+"），明天再来");afterPick();return;}
+    if(!res.ok)throw new Error("fail");
+    records.push({name:currentName,restaurant:winner.name,date:todayKey(),time:nowTime(),luck,label:luckLabelOf(luck)});
+  }catch(err){flash("记录失败，请检查网络");}
+  showResult(winner,luck);afterPick();
+}
+function showResult(it,luck){
+  document.getElementById("rEmoji").textContent=it.emoji;
+  document.getElementById("rName").textContent=it.name;
+  document.getElementById("rTags").textContent=(it.tags||[]).map(t=>"#"+t).join("  ");
+  document.getElementById("rAgain").style.display=(currentName&&drawOf(currentName))?"none":"";
+  document.getElementById("resultMask").classList.add("show");
+  startLuckRoll(luck);
+  ding("ding");if(navigator.vibrate)navigator.vibrate([40,30,40]);
+}
+
+// ---------- D10 今日运气值（餐厅抽完自动接续）----------
+function luckLabelOf(n){return n<=3?"運勢不佳":(n<=7?"運勢普通":"鴻運當頭");}
+function luckLevel(n){return n<=3?1:(n<=7?2:3);}
+let luckRAF=null;
+function startLuckRoll(target){
+  const d10=document.getElementById("d10"),num=document.getElementById("d10Num"),vd=document.getElementById("luckVerdict");
+  if(luckRAF)cancelAnimationFrame(luckRAF);
+  d10.className="d10";num.textContent="?";
+  vd.className="luck-verdict";vd.textContent="骰子滚动中…";
+  document.getElementById("rOk").disabled=true;
+  document.getElementById("rAgain").disabled=true;
+  const t0=performance.now(),dur=2400;let last=0;
+  function frame(now){
+    const p=Math.min(1,(now-t0)/dur);const e=1-Math.pow(1-p,3);   // 缓出：翻滚越来越慢
+    if(now-last>50+e*330){last=now;num.textContent=1+Math.floor(Math.random()*10);}
+    if(p<1)luckRAF=requestAnimationFrame(frame);
+    else{num.textContent=target;finishLuck(target);}
+  }
+  luckRAF=requestAnimationFrame(frame);
+}
+function finishLuck(target){
+  const d10=document.getElementById("d10"),vd=document.getElementById("luckVerdict");
+  const lv=luckLevel(target);
+  d10.className="d10 final v"+lv;
+  vd.className="luck-verdict v"+lv;
+  vd.textContent=target+" 分 · "+luckLabelOf(target)+(lv===3?" 🎉":(lv===1?" 😞":" 😐"));
+  document.getElementById("rOk").disabled=false;
+  document.getElementById("rAgain").disabled=false;
+  ding("ding");
+  if(navigator.vibrate&&lv===3)navigator.vibrate([60,40,60,40,80]);
+}
+function closeResult(){
+  if(luckRAF){cancelAnimationFrame(luckRAF);luckRAF=null;}
+  document.getElementById("resultMask").classList.remove("show");
+  document.getElementById("rOk").disabled=false;
+  document.getElementById("rAgain").disabled=false;
+}
+function ding(type){
+  try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+    const ac=ding._ac||(ding._ac=new AC());const o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);
+    if(type==="ding"){o.frequency.value=880;g.gain.setValueAtTime(.0001,ac.currentTime);g.gain.exponentialRampToValueAtTime(.3,ac.currentTime+.02);g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+.5);o.start();o.stop(ac.currentTime+.5);}
+    else{o.frequency.value=300;g.gain.setValueAtTime(.15,ac.currentTime);g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+.08);o.start();o.stop(ac.currentTime+.08);}
+  }catch(e){}
+}
+
+// ---------- 名字选择 ----------
+function renderNames(){
+  const box=document.getElementById("npList");box.innerHTML="";
+  NAMES.forEach(n=>{
+    const b=document.createElement("button");
+    const disp=n==="other"?(customOther||"other"):n;
+    const drawn=n!=="other"&&drawOf(n);   // 该名字今天已抽过（other 不受记录影响）
+    b.className="np-btn"+(isSelected(n)?" on":"")+(drawn?" done":"");
+    if(drawn)b.disabled=true;
+    b.textContent=drawn?disp+" ✓":disp;
+    b.dataset.name=n;b.onclick=()=>pickName(n);box.appendChild(b);
+  });
+}
+function isSelected(n){return n==="other"?(currentName===customOther&&!!customOther):currentName===n;}
+function pickName(n){
+  if(n!=="other"){currentName=n;customOther=null;document.getElementById("npOtherIn").classList.remove("show");renderNames();afterPick();}
+  else{const box=document.getElementById("npOtherIn");box.classList.add("show");const inp=document.getElementById("npOtherInput");inp.value=customOther||"";setTimeout(()=>inp.focus(),50);}
+}
+function confirmOther(){
+  const v=document.getElementById("npOtherInput").value.trim();if(!v)return;customOther=v;currentName=v;
+  document.getElementById("npOtherIn").classList.remove("show");renderNames();afterPick();
+}
+async function afterPick(){
+  const st=document.getElementById("npStatus");
+  const spb=document.getElementById("spinBtn"),spb2=document.getElementById("spinBtn2");
+  await loadRecords();
+  const ex=currentName?drawOf(currentName):null;
+  if(ex){st.className="np-status bad";st.textContent="🟢 "+currentName+" 今天已抽到："+ex.restaurant+"（明天再来）";spb.disabled=true;spb2.disabled=true;}
+  else if(currentName){st.className="np-status ok";st.textContent="✅ 已选 "+currentName+"，点下面按钮开抽！";spb.disabled=false;spb2.disabled=false;}
+  else{st.textContent="";spb.disabled=false;spb2.disabled=false;}
+  renderNames();      // 刷新名字按钮的已抽状态（✓ / 置灰）
+  renderRecords();
+}
+function renderRecords(){
+  const list=document.getElementById("rcList");
+  document.getElementById("rcDate").textContent=todayKey();
+  if(records.length===0){list.innerHTML='<div class="rc-empty">今天还没人抽，快来当第一个！</div>';return;}
+  const sorted=records.slice().sort((a,b)=>{
+    const sa=(typeof a.luck==="number"&&a.luck>=1&&a.luck<=10)?a.luck:-1;
+    const sb=(typeof b.luck==="number"&&b.luck>=1&&b.luck<=10)?b.luck:-1;
+    return sb-sa;   // 运气值由大到小，运气相同时保持原时间顺序
+  });
+  list.innerHTML=sorted.map(d=>{
+    const hasLuck=(typeof d.luck==="number")&&d.luck>=1&&d.luck<=10;
+    const badge=hasLuck?`<span class="rc-luck lv${luckLevel(d.luck)}" title="今日運氣：${luckLabelOf(d.luck)}">🎲 ${d.luck}</span>`:'<span class="rc-luck lv0" title="无运气记录">🎲 —</span>';
+    return `<div class="rc-row">${badge}<span class="rc-name">｜${esc(d.name)}</span><span class="rc-arrow">→</span><span class="rc-rest">${esc(d.restaurant)}</span><span class="rc-time">${d.time}</span></div>`;
+  }).join("");
+}
+
+// ---------- 菜单管理 ----------
+const mgr=document.getElementById("mgr");
+function renderList(){
+  const box=document.getElementById("itemList");box.innerHTML="";
+  if(items.length===0){box.innerHTML='<div class="empty">还没有餐品，下面加一个吧</div>';return;}
+  items.forEach(it=>{
+    const div=document.createElement("div");div.className="item"+(it.off?" off":"");
+    div.innerHTML=`
+      <div class="e">${it.emoji}</div>
+      <div class="nm">${it.name}<small>${(it.tags||[]).join(" · ")}</small></div>
+      <div class="wt"><button data-act="dec">−</button><span>${it.weight}</span><button data-act="inc">＋</button></div>
+      <label style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:3px;"><input type="checkbox" ${it.off?"checked":""} data-act="off">今天不吃</label>
+      <button class="del" data-act="del">删</button>`;
+    div.querySelector('[data-act=dec]').onclick=()=>{it.weight=Math.max(1,it.weight-1);saveItems();};
+    div.querySelector('[data-act=inc]').onclick=()=>{it.weight++;saveItems();};
+    div.querySelector('[data-act=off]').onchange=e=>{it.off=e.target.checked;drawWheel();};
+    div.querySelector('[data-act=del]').onclick=()=>{items=items.filter(x=>x.id!==it.id);saveItems();};
+    box.appendChild(div);
+  });
+}
+function openMgr(){renderList();mgr.classList.add("show");}
+function closeMgr(){mgr.classList.remove("show");}
+document.getElementById("mgrBtn").onclick=openMgr;
+document.getElementById("mgrClose").onclick=closeMgr;
+document.getElementById("mgrDone").onclick=async()=>{await saveItems();closeMgr();};
+document.getElementById("aAdd").onclick=async()=>{
+  const emoji=document.getElementById("aEmoji").value.trim()||"🍽️";
+  const name=document.getElementById("aName").value.trim();
+  const tags=document.getElementById("aTags").value.split(/[,，]/).map(s=>s.trim()).filter(Boolean);
+  const weight=Math.max(1,parseInt(document.getElementById("aWeight").value)||1);
+  if(!name){flash("请先填餐品名");return;}
+  const maxId=items.length?Math.max(...items.map(i=>i.id)):0;
+  items.push({id:maxId+1,emoji,name,tags,weight,off:false,color:PALETTE[items.length%PALETTE.length]});
+  await saveItems();document.getElementById("aName").value="";document.getElementById("aTags").value="";
+};
+document.getElementById("resetMenu").onclick=async()=>{
+  if(!confirm("恢复默认菜单会覆盖当前云端菜单，确定？"))return;
+  items=DEFAULT_MENU.map((x,i)=>({id:i+1,...x,off:false,color:PALETTE[i%PALETTE.length]}));
+  await saveItems();flash("已恢复默认菜单");
+};
+
+// ---------- 事件 ----------
+document.getElementById("filters").addEventListener("click",e=>{
+  const c=e.target.closest(".chip");if(!c)return;
+  const f=c.dataset.f;settings[f]=!settings[f];c.classList.toggle("on",settings[f]);drawWheel();
+});
+document.getElementById("spinBtn").addEventListener("click",spin);
+document.getElementById("spinBtn2").addEventListener("click",spin);
+document.getElementById("rOk").addEventListener("click",closeResult);
+document.getElementById("rAgain").addEventListener("click",()=>{closeResult();spin();});
+document.getElementById("npOtherInput").addEventListener("keydown",e=>{if(e.key==="Enter")confirmOther();});
+document.getElementById("npOtherInput").addEventListener("blur",confirmOther);
+document.getElementById("rcClear").onclick=async()=>{
+  if(!confirm("确定清空今日所有抽奖记录？此操作会删除后端数据，无法撤销。"))return;
+  try{
+    const r=await fetch("/api/records",{method:"DELETE"});
+    if(!r.ok)throw new Error("delete failed");
+    records=[];
+    renderRecords();
+    renderNames();
+    flash("✅ 已清空今日记录");
+  }catch(err){
+    flash("清空失败："+err.message);
+  }
+};
+
+// ---------- 版本核对（前端/后端版本必须一致才显示 ✅）----------
+const APP_VERSION = "v3.2.1";
+async function checkVersion(){
+  const tag = document.getElementById("verTag");
+  try{
+    const r = await fetch("/api/version");
+    const d = await r.json();
+    const be = d.version || "?";
+    if(be === APP_VERSION){
+      tag.innerHTML = `前端 <b>${APP_VERSION}</b> · 后端 <b>${be}</b> ✅ · ${d.build || ""}`;
+    }else{
+      tag.innerHTML = `前端 <b>${APP_VERSION}</b> · 后端 <b>${be}</b> ⚠️ 前后端版本不一致，建议重新部署`;
+    }
+  }catch(e){
+    tag.innerHTML = `前端 <b>${APP_VERSION}</b> · 后端未连接（纯静态模式）`;
+  }
+}
+
+// ---------- 初始化 ----------
+(async()=>{
+  checkVersion();
+  try{
+    await loadItems();await loadRecords();
+  }catch(e){
+    document.getElementById("rcList").innerHTML='<div class="rc-empty">加载失败，请确认已部署后端</div>';
+    document.querySelector(".wheel-box").innerHTML='<div class="loading">⚠️ 无法连接后端 API，请确认已部署到 Cloudflare</div>';
+    return;
+  }
+  document.querySelectorAll("#filters .chip").forEach(c=>c.classList.toggle("on",!!settings[c.dataset.f]));
+  renderNames();afterPick();drawWheel();
+})();
+</script>
+</body>
+</html>

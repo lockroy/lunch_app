@@ -1,0 +1,15 @@
+{
+  "name": "lunch-app",
+  "version": "3.2.1",
+  "private": true,
+  "description": "中午食什么大抽奖 — Cloudflare Workers + KV + MCP (v3.2.1)",
+  "main": "worker/index.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}
